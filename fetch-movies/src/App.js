@@ -3,42 +3,58 @@ import { useState, useEffect } from 'react'
 import NumResults from './components/NumResults'
 import Search from './components/Search'
 
-const API_KEY = 'f84fc31'
+const API_KEY = 'c89ff9ce'
 
 function App() {
   const [name, setName] = useState('')
-  const [movies, setMovies] = useState('')
+  const [movies, setMovies] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isError, setIsError] = useState('')
 
   useEffect(() => {
     async function fetchMovies() {
+      setIsLoading(true)
+      setIsError('')
+
       try {
         const response = await fetch(
-          `http://www.omdbapi.com/?apikey=${API_KEY}d&s=${name}`
+          `http://www.omdbapi.com/?apikey=${API_KEY}&s=${name}`
         )
-        const movies = await response.json()
-        setMovies(movies)
+        if (!response.ok) throw new Error('Something went wrong!')
+        const data = await response.json()
+        if (data.Response === 'False') throw new Error(data.Error)
+
+        setMovies(data.Search)
       } catch (error) {
-        console.log(error)
+        setIsError(error.message)
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    fetchMovies()
+    if (name.length < 3) {
+      setMovies([])
+      setIsError('')
+      return
+    }
 
-    /*   return () => {
-      second
-    } */
+    fetchMovies()
   }, [name])
 
   return (
     <>
       <Navigation>
         <Search name={name} setName={setName} />
-        <NumResults />
+        <NumResults movies={movies} />
       </Navigation>
-      <Movies>
+      <Main>
+        <Box>
+          {isLoading && <p>LOADING...</p>}
+          {isError && <p>{isError}</p>}
+          {!isLoading && !isError && <Movies movies={movies} />}
+        </Box>
         <Box />
-        <Box />
-      </Movies>
+      </Main>
     </>
   )
 }
@@ -56,15 +72,41 @@ function Navigation({ children }) {
   )
 }
 
-function Movies({ children }) {
+function Main({ children }) {
   return <main className='main'>{children}</main>
 }
 
-function Box() {
+function Box({ children }) {
+  const [toggle, setToggle] = useState(true)
   return (
     <div className='box'>
-      <button className='btn-toggle'>–</button>
+      <button onClick={() => setToggle(!toggle)} className='btn-toggle'>
+        {toggle ? '–' : '+'}
+      </button>
+      {toggle ? children : null}
     </div>
+  )
+}
+
+function Movies({ movies }) {
+  /*   console.log(movies?.Search?.[0].Title)
+   */ return (
+    <ul className='list list-movies'>
+      {movies?.map(movie => (
+        <Movie key={movie.imdbID} movie={movie} />
+      ))}
+    </ul>
+  )
+}
+
+function Movie({ movie }) {
+  const { Poster: poster, Title: title, Year: year } = movie
+  return (
+    <li>
+      {poster !== 'N/A' ? <img src={poster} alt={title} /> : <span>🎬</span>}
+      <h3>{title}</h3>
+      <p>Year: {year}</p>
+    </li>
   )
 }
 
