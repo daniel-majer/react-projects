@@ -1,7 +1,7 @@
-function NumResults({ movies }) {
+function NumResults({ data }) {
   return (
     <p className='num-results'>
-      Found <strong>{movies.length}</strong> results
+      Found <strong>{data.length}</strong> results
     </p>
   )
 }

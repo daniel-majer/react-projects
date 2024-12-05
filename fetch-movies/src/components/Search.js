@@ -1,23 +1,14 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import { useKey } from '../custom-hooks/useKey'
 
-function Search({ name, setName }) {
+function Search({ name, setQuery }) {
   const inputEl = useRef(null)
 
-  useEffect(() => {
+  useKey('Enter', function () {
+    if (document.activeElement === inputEl.current) return
     inputEl.current.focus()
-    function keyPress(e) {
-      if (document.activeElement === inputEl.current) return
-      if (e.key === 'Enter') {
-        inputEl.current.focus()
-        setName('')
-      }
-    }
-    document.addEventListener('keydown', keyPress)
-
-    return () => {
-      document.removeEventListener('keydown', keyPress)
-    }
-  }, [setName])
+    setQuery('')
+  })
 
   return (
     <input
@@ -25,7 +16,7 @@ function Search({ name, setName }) {
       type='text'
       placeholder='Search movies...'
       value={name}
-      onChange={e => setName(e.target.value)}
+      onChange={e => setQuery(e.target.value)}
       ref={inputEl}
     />
   )

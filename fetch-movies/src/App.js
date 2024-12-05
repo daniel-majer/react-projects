@@ -1,71 +1,37 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 import NumResults from './components/NumResults'
 import Search from './components/Search'
 import Loading from './components/Loading'
 import ErrorMessage from './components/ErrorMessage'
+import Summary from './components/Summary'
+import Box from './components/Box'
+import MovieDetail from './components/MovieDetail'
+import Movie from './components/Movie'
 
-const API_KEY = 'c89ff9ce'
+import { useFetch } from './custom-hooks/useFetch'
 
 function App() {
-  const [name, setName] = useState('')
-  const [movies, setMovies] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isError, setIsError] = useState('')
+  const [query, setQuery] = useState('')
+  const [movieId, setMovieId] = useState(null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
-
-    async function fetchMovies() {
-      setIsLoading(true)
-
-      try {
-        const response = await fetch(
-          `http://www.omdbapi.com/?apikey=${API_KEY}&s=${name}`,
-          { signal }
-        )
-        if (!response.ok) throw new Error('Something went wrong!')
-        const data = await response.json()
-        if (data.Response === 'False') throw new Error(data.Error)
-
-        setMovies(data.Search)
-        setIsError('')
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          setIsError(error.message)
-        }
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    if (name.length < 3) {
-      setMovies([])
-      setIsError('')
-      return
-    }
-
-    fetchMovies()
-
-    return function () {
-      controller.abort()
-    }
-  }, [name])
+  const [data, isLoading, isError] = useFetch(query)
 
   return (
     <>
       <Navigation>
-        <Search name={name} setName={setName} />
-        <NumResults movies={movies} />
+        <Search query={query} setQuery={setQuery} />
+        <NumResults data={data} />
       </Navigation>
       <Main>
         <Box>
           {isLoading && <Loading />}
           {isError && <ErrorMessage />}
-          {!isLoading && !isError && <Movies movies={movies} />}
+          {!isLoading && !isError && (
+            <Movies data={data} setMovieId={setMovieId} />
+          )}
         </Box>
-        <Box />
+        <Box>{movieId ? <MovieDetail movieId={movieId} /> : <Summary />}</Box>
       </Main>
     </>
   )
@@ -88,36 +54,13 @@ function Main({ children }) {
   return <main className='main'>{children}</main>
 }
 
-function Box({ children }) {
-  const [toggle, setToggle] = useState(true)
-  return (
-    <div className='box'>
-      <button onClick={() => setToggle(!toggle)} className='btn-toggle'>
-        {toggle ? '–' : '+'}
-      </button>
-      {toggle ? children : null}
-    </div>
-  )
-}
-
-function Movies({ movies }) {
+function Movies({ data, setMovieId }) {
   return (
     <ul className='list list-movies'>
-      {movies?.map(movie => (
-        <Movie key={movie.imdbID} movie={movie} />
+      {data?.map(movie => (
+        <Movie key={movie.imdbID} movie={movie} setMovieId={setMovieId} />
       ))}
     </ul>
-  )
-}
-
-function Movie({ movie }) {
-  const { Poster: poster, Title: title, Year: year } = movie
-  return (
-    <li>
-      {poster !== 'N/A' ? <img src={poster} alt={title} /> : <span>🎬</span>}
-      <h3>{title}</h3>
-      <p>Year: {year}</p>
-    </li>
   )
 }
 
