@@ -1,13 +1,13 @@
 import { useRef } from 'react'
 import { useKey } from '../custom-hooks/useKey'
 
-function Search({ name, setQuery }) {
+function Search({ query, setQuery }) {
   const inputEl = useRef(null)
 
   useKey('Enter', function () {
     if (document.activeElement === inputEl.current) return
     inputEl.current.focus()
-    setQuery('')
+    return setQuery('')
   })
 
   return (
@@ -15,7 +15,7 @@ function Search({ name, setQuery }) {
       className='search'
       type='text'
       placeholder='Search movies...'
-      value={name}
+      value={query}
       onChange={e => setQuery(e.target.value)}
       ref={inputEl}
     />
